@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from io3d import mocap, pcd, ply
+from io3d.pcd import read_point_cloud, save_point_cloud
 from scipy.spatial.transform import Rotation as R
 from smpl import model as smpl_model
 from tqdm import tqdm
@@ -110,6 +111,9 @@ def generate_segment(pc_dir: str,
         lidar_points = pc_util.crop_points(lidar_points, crop_box)
         lidar_points = pc_util.erase_background(
             lidar_points, bg_kdtree, pre_center)
+        pre_center = np.mean(lidar_points, axis=0)
+        save_point_cloud(os.path.join(segment_dir, pc_filename), lidar_points)
+
         cur_reserved = lidar_points.shape[0] >= MIN_PERSON_POINTS_NUM
         reserved.append(cur_reserved)
         if cur_reserved:
@@ -328,7 +332,7 @@ def process_each(index, args):
         # img_util.video_to_images(video_path, img_dir)
         # # path_util.clear_folder(pc_dir)
         # pc_util.pcap_to_pcds(pcap_path, pc_dir)
-        # mocap_util.get_csvs_from_bvh(bvh_path, mocap_dir)
+        mocap_util.get_csvs_from_bvh(bvh_path, mocap_dir)
 
         pc_timestamps = np.array(read_array_dat(
             os.path.join(pc_dir, 'timestamps.dat')))

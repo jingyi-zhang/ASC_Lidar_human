@@ -73,26 +73,41 @@ def get_kdtree(points):
 
 
 if __name__ == '__main__':
-    bg_path = 'datasets/pcds/2022-04-10-18-33-00-RS-0-Data/000004.pcd'
-    bg_points = read_point_cloud(bg_path)
-    kdtree = get_kdtree(bg_points)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pcap2pcd', action='store_true', default=False)
+    parser.add_argument('--remove_bg', action='store_true', default=False)
+    parser.add_argument('--pcap_path', type=str, default=None)
+    parser.add_argument('--save_path', type=str, default=None)
+    parser.add_argument('--bg_path', type=str, default=None)
+    args = parser.parse_args()
 
-    pc_path = 'datasets/pcds/2022-04-10-18-34-55-RS-0-Data'
-    human_path = 'datasets/human_pcds/2022-04-10-18-34-55-RS-0-Data'
-    os.makedirs(human_path, exist_ok=True)
-    pre_center = None
+    if args.pcap2pcd:
+        pcap_path = args.pcap_path
+        save_path = args.save_path
+        pcap_to_pcds(pcap_path, save_path)
+
+    if args.remove_bg:
+        bg_path = args.bg_path
+        bg_points = read_point_cloud(bg_path)
+        kdtree = get_kdtree(bg_points)
+
+        pc_path = 'datasets/pcds/2022-04-10-18-34-55-RS-0-Data'
+        human_path = 'datasets/human_pcds/2022-04-10-18-34-55-RS-0-Data'
+        os.makedirs(human_path, exist_ok=True)
+        pre_center = None
 
 
-    filenames = path_util.get_sorted_filenames_by_index(pc_path, isabs=False)
+        filenames = path_util.get_sorted_filenames_by_index(pc_path, isabs=False)
 
-    for filename in tqdm(filenames):
-        if (int(os.path.splitext(filename)[0])) < 100:
-            continue
+        for filename in tqdm(filenames):
+            if (int(os.path.splitext(filename)[0])) < 100:
+                continue
 
-        file_path = os.path.join(pc_path, filename)
-        save_path = os.path.join(human_path, filename)
-        points = read_point_cloud(file_path)
+            file_path = os.path.join(pc_path, filename)
+            save_path = os.path.join(human_path, filename)
+            points = read_point_cloud(file_path)
 
-        human_points = erase_background(points, kdtree, pre_center)
-        pre_center = np.mean(human_points, axis=0)
-        save_point_cloud(save_path, human_points)
+            human_points = erase_background(points, kdtree, pre_center)
+            pre_center = np.mean(human_points, axis=0)
+            save_point_cloud(save_path, human_points)
