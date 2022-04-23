@@ -64,8 +64,8 @@ def erase_background(points, bg_kdtree, pre_center):
     erased_points = points[squared_distance > EPSILON2]
     if erased_points.shape[0] == 0:
         erased_points = points[0].reshape(1, -1)
-    # return erased_points
-    return dbscan_outlier_removal(erased_points, pre_center)
+    return erased_points
+    # return dbscan_outlier_removal(erased_points, pre_center)
 
 
 def get_kdtree(points):
@@ -88,12 +88,12 @@ if __name__ == '__main__':
         pcap_to_pcds(pcap_path, save_path)
 
     if args.remove_bg:
-        bg_path = args.bg_path
+        bg_path = '/SAMSUMG8T/ljl/zjy/raw/417/bg.pcd'
         bg_points = read_point_cloud(bg_path)
         kdtree = get_kdtree(bg_points)
 
-        pc_path = 'datasets/pcds/2022-04-10-18-34-55-RS-0-Data'
-        human_path = 'datasets/human_pcds/2022-04-10-18-34-55-RS-0-Data'
+        pc_path = '/SAMSUMG8T/ljl/zjy/lidarcap/pointclouds/417'
+        human_path = '/SAMSUMG8T/ljl/zjy/lidarcap/labels/3d/segment/417'
         os.makedirs(human_path, exist_ok=True)
         pre_center = None
 

@@ -163,11 +163,20 @@ def read_smpl(filename):
 
 def generate_smpl(cur_dirs: Dict[str, str],
                   mocap_data: mocap.MoCapData,
-                  mocap_indexes: List[int]):
+                  mocap_indexes: List[int],
+                  cur_process_info):
+    start_index = cur_process_info['start_index']
+    end_index = cur_process_info['end_index']
+    pc_start_index = start_index['pointcloud']
+    mocap_start_index = start_index['mocap']
+    total_lenth = end_index-pc_start_index+1
+    mocap_indexes = mocap_indexes[:total_lenth]
+
     poses = [mocap_data.pose(mocap_index) for mocap_index in mocap_indexes]
     print(len(poses))
-    indexes = [path_util.get_index(
-        filename) for filename in path_util.get_sorted_filenames_by_index(cur_dirs.segment_dir, False)]
+    # indexes = [path_util.get_index(
+    #     filename) for filename in path_util.get_sorted_filenames_by_index(cur_dirs.segment_dir, False)]
+    indexes = range(pc_start_index, end_index+1)
     print(len(indexes))
     n_poses = len(poses)
     assert n_poses == len(indexes)
@@ -199,10 +208,16 @@ def generate_pose(cur_dirs: Dict[str, str],
                   mocap_data: mocap.MoCapData,
                   mocap_indexes: List[int],
                   cur_process_info: Dict):
+    start_index = cur_process_info['start_index']
+    end_index = cur_process_info['end_index']
+    pc_start_index = start_index['pointcloud']
+    mocap_start_index = start_index['mocap']
+    total_lenth = end_index-pc_start_index+1
+    mocap_indexes = mocap_indexes[:total_lenth]
 
     segment_filenames = path_util.get_sorted_filenames_by_index(
         cur_dirs.segment_dir)
-
+    segment_filenames=segment_filenames[pc_start_index-1:end_index]
     # Python中list的append操作是线程安全的，所以可以append的时候带上索引，然后按照索引排序
     n = len(segment_filenames)
 
@@ -324,14 +339,15 @@ def process_each(index, args):
 
     mocap_indexes_path = os.path.join(mocap_dir, 'mocap_indexes.npy')
     image_indexes_path = os.path.join(img_dir, 'image_indexes.npy')
+
     if gen.basic:
         # 产生背景点云
-        bg_points_path = os.path.join(cur_dirs.raw_dir, 'bg.pcd')
-        bg_points = pcd.read_point_cloud(bg_points_path)
+        #bg_points_path = os.path.join(cur_dirs.raw_dir, 'bg.pcd')
+        #bg_points = pcd.read_point_cloud(bg_points_path)
 
         # img_util.video_to_images(video_path, img_dir)
         # # path_util.clear_folder(pc_dir)
-        # pc_util.pcap_to_pcds(pcap_path, pc_dir)
+        #pc_util.pcap_to_pcds(pcap_path, pc_dir)
         mocap_util.get_csvs_from_bvh(bvh_path, mocap_dir)
 
         pc_timestamps = np.array(read_array_dat(
@@ -394,9 +410,9 @@ def process_each(index, args):
         # path_util.remove_unnecessary_frames(pc_dir, pc_indexes)
 
         # 如果人不在划定区域内则不考虑，将相应的帧去掉
-        reserved = generate_segment(
-            pc_dir, pc_indexes, segment_dir, bg_points, cur_process_info['box'])
-        pc_indexes = pc_indexes[reserved]
+        # reserved = generate_segment(
+        #     pc_dir, pc_indexes, segment_dir, bg_points, cur_process_info['box'])
+        # pc_indexes = pc_indexes[reserved]
         # img_indexes = img_indexes[reserved]
         # path_util.remove_unnecessary_frames(img_dir, img_indexes)
         # path_util.remove_unnecessary_frames(pc_dir, pc_indexes)
@@ -459,6 +475,11 @@ def process_each(index, args):
                                             m1)).astype(int).tolist()
             mocap_indexes = np.array(mocap_indexes)
         else:
+            start_index = cur_process_info['start_index']
+            end_index = cur_process_info['end_index']
+            pc_start_index = start_index['pointcloud']
+            total_lenth = end_index - pc_start_index + 1
+
             mocap_start_index = cur_process_info['start_index']['mocap']
             mocap_frame_nums = pd.read_csv(
                 path_util.get_one_path_by_suffix(mocap_dir, '_worldpos.csv')).shape[0]
@@ -467,6 +488,7 @@ def process_each(index, args):
             mocap_indexes = MOCAP_FRAME_RATE * pc_timestamps + mocap_start_index
             mocap_indexes = np.around(
                 mocap_indexes[mocap_indexes < mocap_frame_nums]).astype(int)
+            mocap_indexes = mocap_indexes[:total_lenth]
         print(len(mocap_indexes))
         np.save(mocap_indexes_path, mocap_indexes)
 
@@ -476,11 +498,11 @@ def process_each(index, args):
 
     mocap_indexes = np.load(mocap_indexes_path)
 
-    # if gen.segment:
-    #     bg_points_path = os.path.join(cur_dirs.raw_dir, 'bg.pcd')
-    #     bg_points = pcd.read_point_cloud(bg_points_path)
-    #     generate_segment(pc_dir, segment_dir, bg_points,
-    #                      cur_process_info['box'])
+    if gen.segment:
+        bg_points_path = os.path.join(cur_dirs.raw_dir, 'bg.pcd')
+        bg_points = pcd.read_point_cloud(bg_points_path)
+        generate_segment(pc_dir, segment_dir, bg_points,
+                         cur_process_info['box'])
 
     if gen.keypoints:
         generate_keypoints(img_dir, cur_dirs.keypoints_dir, openpose_path)
@@ -496,7 +518,7 @@ def process_each(index, args):
         rotation_csv = path_util.get_one_path_by_suffix(
             mocap_dir, '_rotations.csv')
         mocap_data = mocap.MoCapData(worldpos_csv, rotation_csv)
-        generate_smpl(cur_dirs, mocap_data, mocap_indexes)
+        generate_smpl(cur_dirs, mocap_data, mocap_indexes,cur_process_info)
 
     if gen.pose:
         worldpos_csv = path_util.get_one_path_by_suffix(
@@ -553,7 +575,7 @@ if __name__ == '__main__':
     parser.add_argument('--gen_keypoints', action='store_true')
     parser.add_argument('--gen_mask', action='store_true')
     parser.add_argument('--gen_pose', action='store_true')
-    # parser.add_argument('--gen_segment', action='store_true')
+    parser.add_argument('--gen_segment', action='store_true')
     parser.add_argument('--gen_mocap_indexes', action='store_true')
     parser.add_argument('--gen_smpl', action='store_true')
     parser.add_argument('--gen_image_indexes', action='store_true')
