@@ -457,10 +457,31 @@ def process_each(index, args):
         np.save(image_indexes_path, image_indexes)
 
     if gen.mocap_indexes:
+        mocap_indexes = []
+        mocap_timestamp = []
         pc_timestamps = np.array(read_array_dat(
             os.path.join(pc_dir, 'timestamps.dat')))
+        fbx_file = path_util.get_paths_by_suffix(cur_dirs.raw_dir, '.fbx')
+        fbx_file_ = open(fbx_file[0], 'r')
+        fbx_content = fbx_file_.readlines()
+        fbx_data = fbx_content[1295:]
+        i = fbx_content[1294]
+        i = i.split(':')[1]
+        i = i.strip(' ')
+        i = i.split(',')[:-1]
+        for time in i:
+            mocap_timestamp.append(float(time))
+        for i in fbx_data:
+            if i!='\t\t} \n':
+                i = i.split(',')[:-1]
+                for time in i:
+                    mocap_timestamp.append(float(time))
+            else:
+                break
+
+        mocap_timestamp = [each / 46186158 for each in mocap_timestamp] # ms
+
         if 'key_indexes' in cur_process_info:
-            mocap_indexes = []
             key_indexes = cur_process_info['key_indexes']
             for i in range(len(key_indexes) - 1):
                 p1, m1 = key_indexes[i]
@@ -481,15 +502,42 @@ def process_each(index, args):
             total_lenth = end_index - pc_start_index + 1
 
             mocap_start_index = cur_process_info['start_index']['mocap']
-            mocap_frame_nums = pd.read_csv(
-                path_util.get_one_path_by_suffix(mocap_dir, '_worldpos.csv')).shape[0]
-            pc_timestamps = pc_timestamps[pc_indexes - 1]
-            pc_timestamps -= pc_timestamps[0]
-            mocap_indexes = MOCAP_FRAME_RATE * pc_timestamps + mocap_start_index
-            mocap_indexes = np.around(
-                mocap_indexes[mocap_indexes < mocap_frame_nums]).astype(int)
-            mocap_indexes = mocap_indexes[:total_lenth]
-        print(len(mocap_indexes))
+
+            mocap_start_time = mocap_timestamp[mocap_start_index]
+            pc_start_time = pc_timestamps[pc_start_index]
+
+            mocap_indexes.append(mocap_start_index)
+            for frame_index in range(1, total_lenth):
+                time_interval = pc_timestamps[pc_start_index + frame_index] - pc_start_time # s
+                mocap_time = mocap_start_time + time_interval * 1000 #
+                try:
+                    a = mocap_timestamp.index(mocap_time)
+                    mocap_indexes.append(a)
+                except:
+                    temp = mocap_timestamp.copy()
+                    mocap_timestamp.append(mocap_time)
+                    b = mocap_timestamp
+                    b = sorted(b)
+                    idx = b.index(mocap_time)
+                    if b[idx]-b[idx-1]<b[idx+1]-b[idx]:
+                        mocap_indexes.append(idx-1)
+                    else:
+                        mocap_indexes.append(idx)
+                    mocap_timestamp=temp.copy()
+
+
+                # time_interval = float(mocap_timestamp[mocap_start_index+frame_index])-float(mocap_start_time)
+
+            # mocap_frame_nums = pd.read_csv(
+            #     path_util.get_one_path_by_suffix(mocap_dir, '_worldpos.csv')).shape[0]
+        #     pc_timestamps = pc_timestamps[pc_indexes - 1]
+        #     pc_timestamps -= pc_timestamps[0]
+        #     mocap_indexes = MOCAP_FRAME_RATE * pc_timestamps + mocap_start_index
+        #     mocap_indexes = np.around(
+        #         mocap_indexes[mocap_indexes < mocap_frame_nums]).astype(int)
+        #     mocap_indexes = mocap_indexes[:total_lenth]
+        # print(len(mocap_indexes))
+        mocap_indexes = np.array(mocap_indexes)
         np.save(mocap_indexes_path, mocap_indexes)
 
     if not os.path.exists(mocap_indexes_path):
@@ -561,9 +609,9 @@ if __name__ == '__main__':
     parser.add_argument('--index', type=str, required=True)
 
     parser.add_argument('--raw_dir', type=str,
-                        default='/SAMSUMG8T/ljl/zjy/raw') # /cwang/home/ljl/data/raw
+                        default='//SAMSUMG8T/lidarcapv2/raw') # /cwang/home/ljl/data/raw
     parser.add_argument('--dataset_dir', type=str,
-                        default='/SAMSUMG8T/ljl/zjy/lidarcap') # /cwang/home/ljl/data/lidarcap
+                        default='/SAMSUMG8T/lidarcapv2/lidarcap') # /cwang/home/ljl/data/lidarcap
     parser.add_argument('--openpose_path', type=str,
                         default='/home/ljl/Tools/openpose')
 

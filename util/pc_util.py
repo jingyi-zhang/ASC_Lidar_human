@@ -77,15 +77,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--pcap2pcd', action='store_true', default=False)
     parser.add_argument('--remove_bg', action='store_true', default=False)
-    parser.add_argument('--pcap_path', type=str, default=None)
-    parser.add_argument('--save_path', type=str, default=None)
+    parser.add_argument('--index', type=str, default=None)
     parser.add_argument('--bg_path', type=str, default=None)
     args = parser.parse_args()
 
     if args.pcap2pcd:
-        pcap_path = args.pcap_path
-        save_path = args.save_path
-        pcap_to_pcds(pcap_path, save_path)
+        root_path = '/SAMSUMG8T/lidarcapv2'
+        pcap_path = os.path.join(root_path, 'raw', args.index)
+        pcap_paths = path_util.get_paths_by_suffix(pcap_path, '.pcap')
+        save_path = os.path.join(root_path, 'lidarcap/pointclouds', args.index)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
+        pcap_to_pcds(pcap_paths[0], save_path)
 
     if args.remove_bg:
         bg_path = '/SAMSUMG8T/ljl/zjy/raw/417/bg.pcd'

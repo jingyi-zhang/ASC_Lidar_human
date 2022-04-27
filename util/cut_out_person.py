@@ -1,6 +1,8 @@
 import os
-
 import numpy as np
+import open3d as o3d
+import tqdm
+import glob
 
 
 mqh_work_path = '/SAMSUMG8T/mqh/417'
@@ -19,12 +21,14 @@ for f in glob.glob(f'{pcap_path}/*.pcap'):
 """
 
 
-def cut_out_person(input_pcds_path, output_pcds_path):
-    import open3d as o3d
-    import tqdm
-    import glob, os
+def cut_out_person(index):
+    root_path = ''
+    input_pcds_path = os.path.join('/SAMSUMG8T/lidarcapv2/lidarcap/pointclouds',index)
+    output_pcds_path =os.path.join('/SAMSUMG8T/lidarcapv2/lidarcap/labels/3d/segment',index)
 
     assert os.path.exists(input_pcds_path), 'input_pcds_path不存在！'
+    if not os.path.exists(output_pcds_path):
+        os.makedirs(output_pcds_path)
     print(f'cut out person from {input_pcds_path} to {output_pcds_path}')
 
     filenames = glob.glob(os.path.join(input_pcds_path, '*.pcd'))
@@ -87,9 +91,10 @@ for dir in os.listdir(mqh_work_path):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pcap_path', type=str, required=True)
-    parser.add_argument('--save_path', type=str, required=True)
+    parser.add_argument('--index', type=str, required=True)
+    # parser.add_argument('--pcap_path', type=str, required=True)
+    # parser.add_argument('--save_path', type=str, required=True)
     args = parser.parse_args()
-    cut_out_person(args.pcap_path, args.save_path)
+    cut_out_person(args.index)
 
     #--pcap_path /SAMSUMG8T/mqh/417/4_17_14_57_wx_jiandongxi/pcap_pcds --save_path /SAMSUMG8T/mqh/417/4_17_14_57_wx_jiandongxi/person_pcds
