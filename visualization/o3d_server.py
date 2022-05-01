@@ -1,10 +1,13 @@
 #   Author: mqh
+import os
+from util import path_util
 import socketio
 
 sio = socketio.AsyncServer(async_mode='tornado')
 
 import open3d as o3d
 import asyncio
+import argparse
 vis = o3d.visualization.Visualizer()
 vis.create_window()
 
@@ -125,6 +128,23 @@ app = tornado.web.Application(
 )
 app.listen(5555)
 tornado.ioloop.IOLoop.current().run_sync(vis_update)
+
+if __name__ == '__mian__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--index', type=str, default=None)
+    parser.add_argument('--show_pc', action='store_true',default=False)
+    parser.add_argument('--show_smpl_mesh', action='store_true',default=False)
+    parser.add_argument('--show_smpl_pc', action='store_true',default=False)
+    parser.add_argument('--show_both', action='store_true',default=False)
+    args = parser.parse_args()
+
+    root_path = '/SAMSUMG8T/lidarcapv2/lidarcap'
+    smpl_path = os.path.join(root_path, 'labels/3d/smpl', args.index)
+    pc_path = os.path.join(root_path, 'pointclouds', args.index)
+    if args.show_both:
+        spml_files = path_util.get_paths_by_suffix(smpl_path, '.json')
+
 
 
 """
