@@ -1,6 +1,7 @@
 # 0.安装依赖
 ```angular2html
 pip install python-socketio
+pip install "python-socketio[client]"
 ```
 
 # 1.在本地运行o3d_server.py

@@ -609,7 +609,7 @@ if __name__ == '__main__':
     parser.add_argument('--index', type=str, required=True)
 
     parser.add_argument('--raw_dir', type=str,
-                        default='//SAMSUMG8T/lidarcapv2/raw') # /cwang/home/ljl/data/raw
+                        default='/SAMSUMG8T/lidarcapv2/raw') # /cwang/home/ljl/data/raw
     parser.add_argument('--dataset_dir', type=str,
                         default='/SAMSUMG8T/lidarcapv2/lidarcap') # /cwang/home/ljl/data/lidarcap
     parser.add_argument('--openpose_path', type=str,

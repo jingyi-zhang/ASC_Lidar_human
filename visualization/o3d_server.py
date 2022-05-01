@@ -1,10 +1,13 @@
 #   Author: mqh
+import os
+# from util import path_util
 import socketio
 
 sio = socketio.AsyncServer(async_mode='tornado')
 
 import open3d as o3d
 import asyncio
+import argparse
 vis = o3d.visualization.Visualizer()
 vis.create_window()
 
@@ -27,10 +30,6 @@ def connect(sid, environ, auth):
 @sio.event
 def disconnect(sid):
     print('disconnect ', sid)
-
-
-
-
 
 id_to_geometry = {}
 
@@ -124,9 +123,23 @@ app = tornado.web.Application(
     # ... other application options
 )
 app.listen(5555)
-tornado.ioloop.IOLoop.current().run_sync(vis_update)
+tornado.ioloop.IOLoop.current().run_sync(vis_update)    #//会阻塞在这里
 
-
-"""
+# if __name__ == '__mian__':
+#
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--index', type=str, default=None)
+#     parser.add_argument('--show_pc', action='store_true',default=False)
+#     parser.add_argument('--show_smpl_mesh', action='store_true',default=False)
+#     parser.add_argument('--show_smpl_pc', action='store_true',default=False)
+#     parser.add_argument('--show_both', action='store_true',default=False)
+#     args = parser.parse_args()
+#
+#     smpl_pred_path = '/mnt/d/human/human_occlude/visual/20220504_141919/lidarcap'
+#     smpl_gt_path = '/mnt/d/human/human_occlude/visual/1'
+#
+#
+#
+test_trans = [0.2, 0.2, 0]
 test_pose = [0.836127378397543, 0.7968662235677227, 1.3865917901282314, 0.09538421145576546, -0.07802244724603179, -0.0451182395141796, 0.13345783195628988, 0.025858816291387646, -0.012633933396760694, 0.05161666692104735, 0.029963388758322145, -0.055438702473743544, 0.043857358237534706, -0.0003272325108215652, 0.08166379319301671, 0.04381553414104606, 0.07573319563773899, -0.04539729549589903, 0.05115099738541373, 0.03085748656186713, -0.09290075370641884, -0.04113084978589002, 0.15672501019060198, -0.041370933718374754, -0.07885069602835204, -0.06513856421845565, 0.06277148951269874, 0.05217247003534406, 0.1437260905291329, -0.11494412230506264, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.007643864863825729, -0.0004676168920657302, 0.12219801993969306, 0.02740611878780802, -0.2250846161100171, -0.3257006962176012, -0.14098278917591137, -0.006157103191784621, 0.056719646616393275, 0.010969569900005296, -0.13450666067288236, 0.07371440274563333, -0.03514749056145958, -0.005092626856970985, -0.9168401000892479, -1.0735153354228397, 0.5103949107809096, -0.4240301374691297, 0.2416073163461026, -0.07199580741350063, -0.08729979701294982, -0.5761975599404016, 0.4247319722219089, -0.12949242787246543, 0.13672831541727248, -0.08995617645605605, 0.11117749205897905, -0.1105943982585262, 0.20086635147617568, 0.02283286859146917, -0.008813476746806785, 0.051946867120518055, -0.3360537860899213, -0.008813358605433249, -0.051946940188505375, 0.33605356229875927]
-"""
+client.emit('add_smpl_pc',('human_pc', test_pose, None, test_trans))
