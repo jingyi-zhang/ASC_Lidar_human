@@ -33,18 +33,18 @@ def multi_func(func, max_process_num, total, desc, unzip, *args):
         res = list(tqdm(map_func(func, args), total=total, desc=desc))
     return tuple([list(x) for x in zip(*res)]) if (unzip and isinstance(res[0], tuple)) else res
 
-
-import torch
-ctx = torch.multiprocessing.get_context("spawn")
-
-
-def gpu_multi_func(func, max_process_num, total, desc, unzip, *args):
-    # args is a tuple
-    assert len(args) > 0 and len(args[0]) == total
-    from tqdm import tqdm
-    multi_param = len(args) > 1
-    args = list(zip(*args)) if multi_param else args[0]
-    with ctx.Pool(max_process_num) as p:
-        map_func = p.istarmap if multi_param else p.imap
-        res = list(tqdm(map_func(func, args), total=total, desc=desc))
-    return tuple([list(x) for x in zip(*res)]) if (unzip and isinstance(res[0], tuple)) else res
+#
+# import torch
+# ctx = torch.multiprocessing.get_context("spawn")
+#
+#
+# def gpu_multi_func(func, max_process_num, total, desc, unzip, *args):
+#     # args is a tuple
+#     assert len(args) > 0 and len(args[0]) == total
+#     from tqdm import tqdm
+#     multi_param = len(args) > 1
+#     args = list(zip(*args)) if multi_param else args[0]
+#     with ctx.Pool(max_process_num) as p:
+#         map_func = p.istarmap if multi_param else p.imap
+#         res = list(tqdm(map_func(func, args), total=total, desc=desc))
+#     return tuple([list(x) for x in zip(*res)]) if (unzip and isinstance(res[0], tuple)) else res

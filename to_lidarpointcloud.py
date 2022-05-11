@@ -17,7 +17,7 @@ def hidden_point_removal(pcd, camera=[0, 0, 0]):
     # radius = diameter * 100
     radius = dist * 150
 
-    print("Get all points that are visible from given view point")
+    #print("Get all points that are visible from given view point")
     _, pt_map = pcd.hidden_point_removal(camera, radius)
     pcd = pcd.select_by_index(pt_map)
     return pcd
@@ -29,13 +29,13 @@ def select_points_on_the_scan_line(points, view_point=None, scans=126, line_num=
     fov_down = np.deg2rad(fov_down)
     fov = abs(fov_down) + abs(fov_up)
 
-    # ratio = fov/(scans - 1)   # 64bins 的竖直分辨率
-    # hoz_ratio = 2 * np.pi / (line_num - 1)    # 64bins 的水平分辨率
+    # ratio = fov/(scans - 1)
+    # hoz_ratio = 2 * np.pi / (line_num - 1)
     # precision * np.random.randn()
     ratio = np.deg2rad(0.2)
     hoz_ratio = np.deg2rad(0.2)
 
-    print(points.shape[0])
+    #print(points.shape[0])
     if view_point is not None:
         points -= view_point
     depth = np.linalg.norm(points, 2, axis=1)
@@ -50,7 +50,7 @@ def select_points_on_the_scan_line(points, view_point=None, scans=126, line_num=
 
     saved_box = {s: {} for s in np.arange(scans)}
 
-    #### 筛选fov范围内的点
+    ####
     for idx in range(0, points.shape[0]):
         rule1 = pitch[idx] >= fov_down
         rule2 = pitch[idx] <= fov_up
@@ -70,7 +70,7 @@ def select_points_on_the_scan_line(points, view_point=None, scans=126, line_num=
             y = xy * np.sin(pointid * hoz_ratio)
             x = xy * np.cos(pointid * hoz_ratio)
 
-            # 找到根指定激光射线夹角最小的点
+            #
             cos_delta_theta = np.dot(points[idx], np.array([x, y, z])) / depth[idx]
             delta_theta = np.arccos(abs(cos_delta_theta))
             if pointid in saved_box[scanid]:
@@ -91,7 +91,7 @@ def select_points_on_the_scan_line(points, view_point=None, scans=126, line_num=
     save_points = np.array(save_points)
 
     #####
-    print(save_points.shape)
+    #print(save_points.shape)
     pc = o3d.open3d.geometry.PointCloud()
     pc.points = o3d.open3d.utility.Vector3dVector(save_points)
     pc.paint_uniform_color([0.5, 0.5, 0.5])
@@ -101,7 +101,7 @@ def select_points_on_the_scan_line(points, view_point=None, scans=126, line_num=
 
 def simulatorLiDAR(root, out_root):
     index = root.split('/')[-1]
-    print(index)
+    #print(index)
     out_pose_path = os.path.join(out_root, 'pose', index)
     out_segment_path = os.path.join(out_root, 'segment', index)
     if not os.path.exists(out_pose_path):
@@ -179,5 +179,15 @@ def simulatorLiDAR(root, out_root):
         break
 
 if __name__ == '__main__':
-    simulatorLiDAR(
-        '/mnt/d/squeeze/sequences/Date01_Sub01_boxlong_hand', '/mnt/d/human/human_downsample/labels/3d')
+    ignore_=['Date01','Date02']
+    squeeze_root = '/mnt/d/squeeze/sequences'
+    squeezes = []
+    squeeze = os.listdir(squeeze_root)
+    for file in squeeze:
+        if os.path.isdir(os.path.join(squeeze_root,file)) and file.split('_')[0] not in ignore_:
+            squeezes.append(os.path.join(squeeze_root,file))
+
+    multiprocess.multi_func(functools.partial(simulatorLiDAR, out_root='/mnt/d/human/human_downsample/labels/3d'),
+                            8, len(squeezes),'simulate', True, squeezes)
+    # simulatorLiDAR(
+    #     '/mnt/d/squeeze/sequences/Date01_Sub01_boxlong_hand', '/mnt/d/human/human_downsample/labels/3d')
