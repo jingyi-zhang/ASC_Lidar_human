@@ -3,7 +3,7 @@ from sklearn.cluster import DBSCAN
 from tqdm import tqdm
 import numpy as np
 import os
-import pcl
+# import pcl
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from util import path_util
@@ -68,8 +68,8 @@ def erase_background(points, bg_kdtree, pre_center):
     # return dbscan_outlier_removal(erased_points, pre_center)
 
 
-def get_kdtree(points):
-    return pcl.PointCloud(points.astype(np.float32)).make_kdtree_flann()
+# def get_kdtree(points):
+#     return pcl.PointCloud(points.astype(np.float32)).make_kdtree_flann()
 
 
 if __name__ == '__main__':
@@ -77,41 +77,60 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--pcap2pcd', action='store_true', default=False)
     parser.add_argument('--remove_bg', action='store_true', default=False)
-    parser.add_argument('--index', type=str, default=None)
+    parser.add_argument('--index', type=str, default='1')
     parser.add_argument('--bg_path', type=str, default=None)
     args = parser.parse_args()
 
     if args.pcap2pcd:
-        root_path = '/SAMSUMG8T/lidarcapv2'
-        pcap_path = os.path.join(root_path, 'raw', args.index)
-        pcap_paths = path_util.get_paths_by_suffix(pcap_path, '.pcap')
-        save_path = os.path.join(root_path, 'lidarcap/pointclouds', args.index)
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
+        root_path = '/hdd24T/zjy/jingyi/gait/xmu_gait'
+        raw_path = os.path.join(root_path, 'raw')
+        indexs = os.listdir(raw_path)
+        for index in tqdm(indexs):
+            person_path = os.path.join(root_path, 'raw', index)
+            save_person_path =  os.path.join(root_path, 'lidarcap/pointclouds', index)
+            if not os.path.exists(save_person_path):
+                os.makedirs(save_person_path)
+                
+            look_paths = os.listdir(person_path)
+            for look_index in look_paths:
+                save_look_path = os.path.join(save_person_path, look_index)
+                if not os.path.exists(save_look_path):
+                    os.makedirs(save_look_path)
+                look_path = os.path.join(person_path, look_index)
+                
+                velo_paths = os.listdir(look_path)
+                for velo_index in velo_paths:
+                    save_path = os.path.join(save_look_path, velo_index)
+                    velo_path = os.path.join(look_path, velo_index)
+                    
+                    pcap_paths = path_util.get_paths_by_suffix(velo_path, '.pcap')
 
-        pcap_to_pcds(pcap_paths[0], save_path)
+                    if not os.path.exists(save_path):
+                        os.makedirs(save_path)
+            
+                    pcap_to_pcds(pcap_paths[0], save_path)
 
-    if args.remove_bg:
-        bg_path = '/SAMSUMG8T/ljl/zjy/raw/417/bg.pcd'
-        bg_points = read_point_cloud(bg_path)
-        kdtree = get_kdtree(bg_points)
-
-        pc_path = '/SAMSUMG8T/ljl/zjy/lidarcap/pointclouds/417'
-        human_path = '/SAMSUMG8T/ljl/zjy/lidarcap/labels/3d/segment/417'
-        os.makedirs(human_path, exist_ok=True)
-        pre_center = None
-
-
-        filenames = path_util.get_sorted_filenames_by_index(pc_path, isabs=False)
-
-        for filename in tqdm(filenames):
-            if (int(os.path.splitext(filename)[0])) < 100:
-                continue
-
-            file_path = os.path.join(pc_path, filename)
-            save_path = os.path.join(human_path, filename)
-            points = read_point_cloud(file_path)
-
-            human_points = erase_background(points, kdtree, pre_center)
-            pre_center = np.mean(human_points, axis=0)
-            save_point_cloud(save_path, human_points)
+    # if args.remove_bg:
+    #     bg_path = '/SAMSUMG8T/ljl/zjy/raw/417/bg.pcd'
+    #     bg_points = read_point_cloud(bg_path)
+    #     kdtree = get_kdtree(bg_points)
+    # 
+    #     pc_path = '/SAMSUMG8T/ljl/zjy/lidarcap/pointclouds/417'
+    #     human_path = '/SAMSUMG8T/ljl/zjy/lidarcap/labels/3d/segment/417'
+    #     os.makedirs(human_path, exist_ok=True)
+    #     pre_center = None
+    # 
+    # 
+    #     filenames = path_util.get_sorted_filenames_by_index(pc_path, isabs=False)
+    # 
+    #     for filename in tqdm(filenames):
+    #         if (int(os.path.splitext(filename)[0])) < 100:
+    #             continue
+    # 
+    #         file_path = os.path.join(pc_path, filename)
+    #         save_path = os.path.join(human_path, filename)
+    #         points = read_point_cloud(file_path)
+    # 
+    #         human_points = erase_background(points, kdtree, pre_center)
+    #         pre_center = np.mean(human_points, axis=0)
+    #         save_point_cloud(save_path, human_points)
