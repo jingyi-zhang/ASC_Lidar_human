@@ -1,13 +1,12 @@
-#   Author: mqh
-import os
-from util import path_util
 import socketio
 
 sio = socketio.AsyncServer(async_mode='tornado')
 
 import open3d as o3d
 import asyncio
-import argparse
+import os
+
+root_path = os.path.dirname(__file__)
 vis = o3d.visualization.Visualizer()
 vis.create_window()
 
@@ -31,10 +30,6 @@ def connect(sid, environ, auth):
 def disconnect(sid):
     print('disconnect ', sid)
 
-
-
-
-
 id_to_geometry = {}
 
 def add_geometry(id, geometry):
@@ -53,7 +48,9 @@ def add_pc(sid, id, points, colors=None):
 
     pointcloud.points = o3d.utility.Vector3dVector(points)
     if colors is not None:
-        pointcloud.colors = colors
+        # pointcloud.colors = colors
+        # pointcloud.colors = o3d.utility.Vector3dVector(colors)
+        pointcloud.paint_uniform_color(colors)
 
     add_geometry(id, pointcloud)
 
@@ -62,7 +59,7 @@ import torch
 import numpy as np
 smpl = SMPL()
 
-from config import SMPL_FILE
+SMPL_FILE = os.path.join(root_path,'basicModel_neutral_lbs_10_207_0_v1.0.0.pkl')
 import pickle
 with open(SMPL_FILE, 'rb') as f:
     smpl_model = pickle.load(f, encoding='iso-8859-1')
@@ -126,25 +123,8 @@ app = tornado.web.Application(
     ],
     # ... other application options
 )
-app.listen(5555)
+app.listen(8785)
 tornado.ioloop.IOLoop.current().run_sync(vis_update)
-
-if __name__ == '__mian__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--index', type=str, default=None)
-    parser.add_argument('--show_pc', action='store_true',default=False)
-    parser.add_argument('--show_smpl_mesh', action='store_true',default=False)
-    parser.add_argument('--show_smpl_pc', action='store_true',default=False)
-    parser.add_argument('--show_both', action='store_true',default=False)
-    args = parser.parse_args()
-
-    root_path = '/SAMSUMG8T/lidarcapv2/lidarcap'
-    smpl_path = os.path.join(root_path, 'labels/3d/smpl', args.index)
-    pc_path = os.path.join(root_path, 'pointclouds', args.index)
-    if args.show_both:
-        spml_files = path_util.get_paths_by_suffix(smpl_path, '.json')
-
 
 
 """
